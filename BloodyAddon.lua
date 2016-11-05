@@ -56,16 +56,17 @@ end
 PlayerAuras = {}
 local function ScanPlayerAuras ()
     -- Fills the PlayerAuras table with aura data. The keys are spell IDs, and each value is a table containing name, duration, expires, value2
+	--CHANGES:Lanrutcon: value1 (the arg before value2) returns the values of buffs/debuffs (CATA)
     local i=1
     PlayerAuras = {}
 	local name, count, duration, expires, spellID, value2, _
     
     -- Scan buffs
     while true do
-        local name,_,_,count,_, duration, expires,_,_,_,spellID,_,_,_, value2 = UnitBuff('player', i)
+        local name,_,_,count,_, duration, expires,_,_,_,spellID,_,_,value1, value2 = UnitBuff('player', i)
         i = i+1
         if name then
-            PlayerAuras[spellID] = {duration=duration, expires=expires, value2=value2, name=name, count=count}
+            PlayerAuras[spellID] = {duration=duration, expires=expires, value2=value1, name=name, count=count}
         else
             break
         end        
@@ -74,10 +75,10 @@ local function ScanPlayerAuras ()
 	i=1
     -- Scan debuffs
     while true do
-        local name,_,_,count,_, duration, expires,_,_,_,spellID,_,_,_, value2 = UnitDebuff('player', i)
+        local name,_,_,count,_, duration, expires,_,_,_,spellID,_,_,value1, value2 = UnitDebuff('player', i)
         i = i+1
         if name then
-            PlayerAuras[spellID] = {duration=duration, expires=expires, value2=value2, name=name, count=count}
+            PlayerAuras[spellID] = {duration=duration, expires=expires, value2=value1, name=name, count=count}
 	    else
             break
         end        
@@ -87,8 +88,9 @@ end
 
 ------------------------------------------------------------------
 
-local _,_, class = UnitClass('player')
-if class==6 then                                                                              -- don't forget to check spec too......
+--CHANGES:Lanrutcon: there is no 3rd value in UnitClass.
+local _,className, class = UnitClass('player')
+if className=="DEATHKNIGHT" then                                                                              -- don't forget to check spec too......
     -- Main bar
     local f = CreateFrame ("Frame", 'frmBloodyAddon', UIParent)
     f:SetSize (120,120)
@@ -170,7 +172,10 @@ if class==6 then                                                                
             self:Show ()
         else
             self.val = 0
-            self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+			--self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+			if(not g_BloodyAddon_config.hideWhenInactive) then
+				self:Show()
+			end
         end
         self.right:SetValue (self:BoneShieldStacksToBarValue (self.val-3))
         self.left:SetValue (self:BoneShieldStacksToBarValue (self.val))
@@ -221,7 +226,10 @@ if class==6 then                                                                
         else
             self.bar:SetScript ("OnUpdate", nil)
             self.bar:SetValue (0)
-            self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+            --self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+			if(not g_BloodyAddon_config.hideWhenInactive) then
+				self:Show()
+			end
         end
     end
     
@@ -252,7 +260,10 @@ if class==6 then                                                                
         else
             self.bar:SetScript ("OnUpdate", nil)
             self.bar:SetValue (0)
-            self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+            --self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+			if(not g_BloodyAddon_config.hideWhenInactive) then
+				self:Show()
+			end
         end
     end
     
@@ -289,7 +300,10 @@ if class==6 then                                                                
             self:GetParent().frost:Hide ()
             self:GetParent().mouth:Hide ()
             self:GetParent().bar:SetStatusBarTexture('Interface\\addons\\'..ADDON..'\\bar')
-            self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+            --self:SetShown (not g_BloodyAddon_config.hideWhenInactive)
+			if(not g_BloodyAddon_config.hideWhenInactive) then
+				self:Show()
+			end
         end
     end
     
@@ -332,7 +346,11 @@ if class==6 then                                                                
     ----------------------------------------------------------------------------
     -- Events and stuff
     
-    function f:UNIT_AURA ()
+    function f:UNIT_AURA (unit)
+		--CHANGES:Lanrutcon: There is no RegisterUnitEvent in Cataclysm. Adding a condition here.
+		if(unit ~= "player") then
+			return;
+		end
         f:UNIT_MAXHEALTH () -- Because I just can't trust UnitHealthMax to not return after login -.-
         
         ScanPlayerAuras ()
@@ -343,11 +361,15 @@ if class==6 then                                                                
         self.shard:Update ()
     end
 
-    function f:UNIT_MAXHEALTH ()
+    function f:UNIT_MAXHEALTH (unit)
+		--CHANGES:Lanrutcon: There is no RegisterUnitEvent in Cataclysm. Adding a condition here.
+		if(unit ~= "player") then
+			return;
+		end
         self.bar:SetMinMaxValues (-0.05*UnitHealthMax ('player'), 0.75*UnitHealthMax ('player'))
     end
     
-    function f:PLAYER_SPECIALIZATION_CHANGED ()
+    function f:ACTIVE_TALENT_GROUP_CHANGED ()
         if GetSpecialization()==1 then
             self:Show()
         else
@@ -387,9 +409,10 @@ if class==6 then                                                                
         end
     end
 
-	f:RegisterUnitEvent ('UNIT_AURA', 'player')
-	f:RegisterUnitEvent ('UNIT_MAXHEALTH', 'player')
-    f:RegisterEvent ('PLAYER_SPECIALIZATION_CHANGED')
+	--CHANGES:Lanrutcon: Changed RegisterUnitEvent to RegisterEvent and added/removed ACTIVE_TALENT_GROUP_CHANGED/PLAYER_SPECIALIZATION_CHANGED
+	f:RegisterEvent ('UNIT_AURA')
+	f:RegisterEvent ('UNIT_MAXHEALTH')
+    f:RegisterEvent ('ACTIVE_TALENT_GROUP_CHANGED')
     f:RegisterEvent ('PLAYER_LOGIN')
     f:RegisterEvent ('ADDON_LOADED')
     f:RegisterEvent ('PLAYER_REGEN_DISABLED')
@@ -398,4 +421,9 @@ if class==6 then                                                                
     f:UNIT_AURA ()
     f:UNIT_MAXHEALTH ()
     
+end
+
+--CHANGES:Lanrutcon: Added Missing functions
+function GetSpecialization()
+	return GetPrimaryTalentTree();
 end

@@ -1,4 +1,4 @@
-## Interface: 60000
+## Interface: 40300
 ## Title: Bloody Add-on
 ## Author: Malsomnus
 ## SavedVariables: g_BloodyAddon_config

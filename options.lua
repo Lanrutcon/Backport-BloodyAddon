@@ -41,7 +41,7 @@ function BloodyAddon_CreateOptions ()
     Options.sldScale:SetMinMaxValues (0.5, 1.5)
     Options.sldScale:SetValueStep (0.1)
     Options.sldScale:SetValue (g_BloodyAddon_config.scale)
-    Options.sldScale:SetObeyStepOnDrag (true) 
+    --Options.sldScale:SetObeyStepOnDrag (true) 
     
     Options.sldScale:SetScript ("OnValueChanged", function (self, value)
         g_BloodyAddon_config.scale = value
