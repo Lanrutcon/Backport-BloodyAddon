@@ -1,0 +1,9 @@
+## Interface: 60000
+## Title: Bloody Add-on
+## Author: Malsomnus
+## SavedVariables: g_BloodyAddon_config
+## SavedVariablesPerCharacter: 
+## Version: v1.05
+
+Options.lua
+BloodyAddon.lua
